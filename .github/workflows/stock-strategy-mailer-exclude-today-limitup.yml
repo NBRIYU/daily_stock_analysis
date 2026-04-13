@@ -1,0 +1,44 @@
+name: stock-strategy-mailer-exclude-today-limitup
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  run-screener:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EMAIL_TO: ${{ secrets.STOCK_MAILER_EMAIL_TO }}
+      SMTP_HOST: ${{ secrets.STOCK_MAILER_SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.STOCK_MAILER_SMTP_PORT }}
+      SMTP_USER: ${{ secrets.STOCK_MAILER_SMTP_USER }}
+      SMTP_PASS: ${{ secrets.STOCK_MAILER_SMTP_PASS }}
+      SMTP_FROM: ${{ secrets.STOCK_MAILER_SMTP_FROM }}
+      SMTP_USE_SSL: ${{ secrets.STOCK_MAILER_SMTP_USE_SSL }}
+      MIN_SCORE: ${{ secrets.STOCK_MAILER_MIN_SCORE }}
+      MAX_CANDIDATES: ${{ secrets.STOCK_MAILER_MAX_CANDIDATES }}
+      TZ: Asia/Shanghai
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: projects/stock_strategy_mailer/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          cd projects/stock_strategy_mailer
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run screener excluding same-day limit-up pool
+        run: |
+          cd projects/stock_strategy_mailer
+          python -m src.main_v3
